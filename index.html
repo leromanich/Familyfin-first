@@ -68,9 +68,10 @@ label{font-size:.85rem;font-weight:600;display:block;margin-top:12px}
 <script>
 // ================== CONFIG SUPABASE ==================
 // ⚠️ REMPLACE CES DEUX VALEURS PAR LES TIENNES
-const SUPABASE_URL = 'https://oiuhotnsnradzabmdytk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdWhvdG5zbnJhZHphYm1keXRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMTM3NDUsImV4cCI6MjEwNjY4OTc0NX0.JCjqwM2HAgiIVX9YwMN63PGzeA6Q9Tl8qsyou1Pke1I';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = 'https://TON-PROJECT-ID.supabase.co';
+const SUPABASE_ANON_KEY = 'TON_ANON_KEY_ICI';
+const { createClient } = window.supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ================== CONSTANTES ==================
 const CATEGORIES = ['Inscription','Secours','Régularisation','Ancienne dette','Tontine 1','Tontine 2','Tontine 3','Tontine 4'];
@@ -134,7 +135,7 @@ const LocalCache = {
     for (const item of queue) {
       try {
         if (item.action === 'insert_transaction') {
-          const {error} = await supabase.from('transactions').insert(item.data);
+          const {error} = await sb.from('transactions').insert(item.data);
           if (!error) { await this.clearQueueItem(item.tempId); success++; }
         }
       } catch(e) {}
@@ -167,7 +168,7 @@ function canProposeRevision(role) { return ['Admin','Président','Président des
 
 async function logAudit(action, entityType, entityId, details={}) {
   try {
-    await supabase.from('audit_logs').insert({
+    await sb.from('audit_logs').insert({
       user_id: currentUser?.id, user_name: currentProfile?.name,
       action, entity_type: entityType, entity_id: entityId, details
     });
@@ -177,10 +178,10 @@ async function logAudit(action, entityType, entityId, details={}) {
 // ================== NOTIFICATIONS ==================
 async function getPendingActions() {
   if (!currentProfile) return {count:0, items:[], type:null};
-  const {data: txs} = await supabase.from('transactions').select('id,status,date,description,created_by,validations,type')
+  const {data: txs} = await sb.from('transactions').select('id,status,date,description,created_by,validations,type')
     .eq('deleted', false).order('date', {ascending:false});
   if (!txs) return {count:0, items:[], type:null};
-  const {data: seen} = await supabase.from('notifications_seen').select('transaction_id').eq('user_id', currentUser.id);
+  const {data: seen} = await sb.from('notifications_seen').select('transaction_id').eq('user_id', currentUser.id);
   const seenIds = new Set((seen||[]).map(s => s.transaction_id));
   let items = [], type = null;
   if (['Admin','Trésorier','Commissaire'].includes(currentProfile.role)) {
@@ -199,7 +200,7 @@ async function getPendingActions() {
 }
 async function markNotificationsSeen(ids) {
   if (!ids.length) return;
-  await supabase.from('notifications_seen').upsert(ids.map(id => ({user_id: currentUser.id, transaction_id: id})), {onConflict:'user_id,transaction_id'});
+  await sb.from('notifications_seen').upsert(ids.map(id => ({user_id: currentUser.id, transaction_id: id})), {onConflict:'user_id,transaction_id'});
 }
 
 // ================== AUTH ==================
@@ -210,13 +211,13 @@ async function handleAuth() {
   if (!email || pin.length < 4) { toast('Email et PIN (min 4) requis'); return; }
   try {
     if (mode === 'login') {
-      const {error} = await supabase.auth.signInWithPassword({email, password: pin});
+      const {error} = await sb.auth.signInWithPassword({email, password: pin});
       if (error) throw error;
     } else {
       const name = document.getElementById('auth-name').value.trim();
       const role = document.getElementById('auth-role').value;
       if (!name) { toast('Nom requis'); return; }
-      const {error} = await supabase.auth.signUp({email, password: pin, options:{data:{name, role}}});
+      const {error} = await sb.auth.signUp({email, password: pin, options:{data:{name, role}}});
       if (error) throw error;
       await new Promise(r => setTimeout(r, 900));
     }
@@ -229,13 +230,13 @@ async function handleAuth() {
 }
 
 async function loadProfile() {
-  const {data:{user}} = await supabase.auth.getUser();
+  const {data:{user}} = await sb.auth.getUser();
   if (!user) return false;
   currentUser = user;
-  const {data: profile} = await supabase.from('profiles').select('*').eq('id', user.id).single();
-  if (!profile || profile.disabled) { await supabase.auth.signOut(); return false; }
+  const {data: profile} = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if (!profile || profile.disabled) { await sb.auth.signOut(); return false; }
   currentProfile = profile;
-  await supabase.from('profiles').update({last_seen: new Date().toISOString()}).eq('id', user.id);
+  await sb.from('profiles').update({last_seen: new Date().toISOString()}).eq('id', user.id);
   await logLogin();
   return true;
 }
@@ -243,21 +244,21 @@ async function loadProfile() {
 async function logLogin() {
   try {
     const fp = navigator.userAgent.slice(0,80);
-    const {data: prev} = await supabase.from('login_logs').select('device_fingerprint').eq('user_id', currentUser.id).limit(5);
+    const {data: prev} = await sb.from('login_logs').select('device_fingerprint').eq('user_id', currentUser.id).limit(5);
     const isNew = !(prev||[]).some(p => p.device_fingerprint === fp);
-    await supabase.from('login_logs').insert({user_id: currentUser.id, user_agent: navigator.userAgent, device_fingerprint: fp, is_new_device: isNew});
+    await sb.from('login_logs').insert({user_id: currentUser.id, user_agent: navigator.userAgent, device_fingerprint: fp, is_new_device: isNew});
     if (isNew) toast('⚠️ Nouvelle connexion détectée');
   } catch(e) {}
 }
 
 async function logout() {
-  await supabase.auth.signOut();
+  await sb.auth.signOut();
   currentUser = null; currentProfile = null; currentScreen = 'login';
   render();
 }
 
 function subscribeRealtime() {
-  supabase.channel('tx').on('postgres_changes', {event:'*', schema:'public', table:'transactions'}, () => {
+  sb.channel('tx').on('postgres_changes', {event:'*', schema:'public', table:'transactions'}, () => {
     if (['home','ops'].includes(currentScreen)) showScreen(currentScreen);
   }).subscribe();
 }
@@ -345,7 +346,7 @@ async function showScreen(id) {
 async function getTransactions() {
   try {
     if (isOnline) {
-      const {data, error} = await supabase.from('transactions').select('*').eq('deleted', false).order('date', {ascending:false});
+      const {data, error} = await sb.from('transactions').select('*').eq('deleted', false).order('date', {ascending:false});
       if (error) throw error;
       await LocalCache.save('transactions', data||[]);
       return data||[];
@@ -489,9 +490,9 @@ async function saveTransaction(isEdit=false) {
   const file = document.getElementById('tx-photo')?.files[0];
   if (file) {
     const path = `${currentUser.id}/${Date.now()}-${file.name}`;
-    const {error} = await supabase.storage.from('receipts').upload(path, file);
+    const {error} = await sb.storage.from('receipts').upload(path, file);
     if (!error) {
-      const url = supabase.storage.from('receipts').getPublicUrl(path).data.publicUrl;
+      const url = sb.storage.from('receipts').getPublicUrl(path).data.publicUrl;
       photoTypes.push({url, type: document.getElementById('tx-photo-type')?.value||'autre', uploaded_by: currentUser.id});
     }
   }
@@ -502,7 +503,7 @@ async function saveTransaction(isEdit=false) {
     photo_types: photoTypes, validations: {tresorier:false,secretaire:false,commissaire:false}
   };
   if (isEdit && window._editingId) {
-    await supabase.from('transactions').update({...payload, updated_at:new Date().toISOString()}).eq('id', window._editingId);
+    await sb.from('transactions').update({...payload, updated_at:new Date().toISOString()}).eq('id', window._editingId);
     logAudit('edit_transaction','transaction',window._editingId,{});
     window._editingId = null; closeModal(); toast('Modifié'); showScreen(currentScreen); return;
   }
@@ -510,7 +511,7 @@ async function saveTransaction(isEdit=false) {
     await LocalCache.queue({action:'insert_transaction', data:payload});
     closeModal(); toast('Enregistré localement'); showScreen(currentScreen); return;
   }
-  const {data, error} = await supabase.from('transactions').insert(payload).select().single();
+  const {data, error} = await sb.from('transactions').insert(payload).select().single();
   if (error) { await LocalCache.queue({action:'insert_transaction', data:payload}); toast('Mis en file d’attente'); }
   else { logAudit('create_transaction','transaction',data.id,{amount,type}); toast('Enregistré'); }
   closeModal(); showScreen(currentScreen);
@@ -518,7 +519,7 @@ async function saveTransaction(isEdit=false) {
 
 async function openTxDetail(id) {
   if (String(id).startsWith('pending-')) { toast('En attente de synchronisation'); return; }
-  const {data:t} = await supabase.from('transactions').select('*').eq('id',id).single();
+  const {data:t} = await sb.from('transactions').select('*').eq('id',id).single();
   if (!t) return;
   const canAct = canValidate(currentProfile.role);
   const canEdit = (t.created_by===currentUser.id || currentProfile.role==='Admin') && ['declare','confirme'].includes(t.status);
@@ -552,7 +553,7 @@ async function openTxDetail(id) {
     <div id="revisions-list" style="margin-top:16px"></div>
   </div></div>`;
   document.body.insertAdjacentHTML('beforeend', html);
-  const {data:revs} = await supabase.from('revisions').select('*').eq('transaction_id',id).order('created_at',{ascending:false});
+  const {data:revs} = await sb.from('revisions').select('*').eq('transaction_id',id).order('created_at',{ascending:false});
   const cont = document.getElementById('revisions-list');
   if (cont && revs?.length) {
     cont.innerHTML = `<strong>Révisions AG</strong>${revs.map(r=>`<div class="card" style="margin-top:8px;padding:12px">
@@ -578,28 +579,28 @@ function renderActions(t) {
 }
 
 async function changeStatus(id, status) {
-  await supabase.from('transactions').update({status, updated_at:new Date().toISOString()}).eq('id',id);
+  await sb.from('transactions').update({status, updated_at:new Date().toISOString()}).eq('id',id);
   logAudit('change_status','transaction',id,{status});
   closeModal(); toast('Statut mis à jour'); showScreen(currentScreen);
 }
 async function validateRepartition(id, key) {
-  const {data:t} = await supabase.from('transactions').select('*').eq('id',id).single();
+  const {data:t} = await sb.from('transactions').select('*').eq('id',id).single();
   const vals = {...(t.validations||{}), [key]:true};
   let status = t.status;
   if (vals.tresorier && vals.secretaire && vals.commissaire) { status='reparti'; toast('Réparti !'); }
   else toast('Validation enregistrée');
-  await supabase.from('transactions').update({validations:vals, status, updated_at:new Date().toISOString()}).eq('id',id);
+  await sb.from('transactions').update({validations:vals, status, updated_at:new Date().toISOString()}).eq('id',id);
   logAudit('validate_repartition','transaction',id,{key});
   closeModal(); showScreen(currentScreen);
 }
 async function forceReparti(id) {
-  await supabase.from('transactions').update({status:'reparti', validations:{tresorier:true,secretaire:true,commissaire:true}}).eq('id',id);
+  await sb.from('transactions').update({status:'reparti', validations:{tresorier:true,secretaire:true,commissaire:true}}).eq('id',id);
   logAudit('force_reparti','transaction',id,{});
   closeModal(); toast('Forcé'); showScreen(currentScreen);
 }
 
 async function openEditModal(id) {
-  const {data:t} = await supabase.from('transactions').select('*').eq('id',id).single();
+  const {data:t} = await sb.from('transactions').select('*').eq('id',id).single();
   if (!t) return;
   closeModal(); openAddModal();
   setTimeout(() => {
@@ -614,14 +615,14 @@ async function openEditModal(id) {
 }
 async function deleteTransaction(id) {
   if (!confirm('Supprimer cette opération ?')) return;
-  await supabase.from('transactions').update({deleted:true, deleted_at:new Date().toISOString(), deleted_by:currentUser.id}).eq('id',id);
+  await sb.from('transactions').update({deleted:true, deleted_at:new Date().toISOString(), deleted_by:currentUser.id}).eq('id',id);
   logAudit('delete_transaction','transaction',id,{});
   closeModal(); toast('Supprimée'); showScreen(currentScreen);
 }
 
 // ================== RÉVISIONS AG ==================
 function openRevisionModal(txId) {
-  supabase.from('transactions').select('*').eq('id',txId).single().then(({data:t}) => {
+  sb.from('transactions').select('*').eq('id',txId).single().then(({data:t}) => {
     if (!t) return;
     const html = `<div class="modal" id="modal"><div class="modal-content">
       <div class="modal-header"><strong>Réviser (AG)</strong><button class="close-btn" onclick="closeModal()">×</button></div>
@@ -657,25 +658,25 @@ async function saveRevision(txId) {
   const file=document.getElementById('rev-photo').files[0];
   if (file) {
     const path=`revisions/${currentUser.id}/${Date.now()}-${file.name}`;
-    const {error}=await supabase.storage.from('receipts').upload(path,file);
-    if (!error) pvUrl=supabase.storage.from('receipts').getPublicUrl(path).data.publicUrl;
+    const {error}=await sb.storage.from('receipts').upload(path,file);
+    if (!error) pvUrl=sb.storage.from('receipts').getPublicUrl(path).data.publicUrl;
   }
-  const {error}=await supabase.from('revisions').insert({
+  const {error}=await sb.from('revisions').insert({
     transaction_id:txId, motif, new_splits:splits, pv_reference:document.getElementById('rev-pv').value.trim()||null,
     pv_photo_url:pvUrl, proposed_by:currentUser.id, proposed_by_name:currentProfile.name
   });
   if (error) toast(error.message); else { closeModal(); toast('Révision proposée'); showScreen(currentScreen); logAudit('propose_revision','revision',txId,{motif}); }
 }
 async function validateRevision(revId, key) {
-  const {data:rev}=await supabase.from('revisions').select('*').eq('id',revId).single();
+  const {data:rev}=await sb.from('revisions').select('*').eq('id',revId).single();
   const vals={...(rev.validations||{}),[key]:true};
   let status=rev.status, validated_at=null;
   if (vals.tresorier&&vals.secretaire&&vals.commissaire) {
     status='validee'; validated_at=new Date().toISOString();
-    await supabase.from('transactions').update({category_splits:rev.new_splits}).eq('id',rev.transaction_id);
+    await sb.from('transactions').update({category_splits:rev.new_splits}).eq('id',rev.transaction_id);
     toast('Révision appliquée');
   }
-  await supabase.from('revisions').update({validations:vals,status,validated_at}).eq('id',revId);
+  await sb.from('revisions').update({validations:vals,status,validated_at}).eq('id',revId);
   logAudit('validate_revision','revision',revId,{key});
   closeModal(); showScreen(currentScreen);
 }
@@ -727,7 +728,7 @@ function printMonthlyReport(month) {
 
 // ================== REÇU ==================
 async function generateReceipt(txId) {
-  const {data:t}=await supabase.from('transactions').select('*').eq('id',txId).single();
+  const {data:t}=await sb.from('transactions').select('*').eq('id',txId).single();
   if (!t) return;
   const w=window.open('','_blank');
   w.document.write(`<html><head><title>Reçu</title><style>body{font-family:sans-serif;padding:30px;max-width:400px;margin:0 auto}.header{text-align:center;border-bottom:2px solid #0f766e;padding-bottom:15px;margin-bottom:20px}.row{display:flex;justify-content:space-between;margin:8px 0}.total{font-size:1.4rem;font-weight:bold;color:#0f766e;text-align:center;margin:20px 0}.footer{margin-top:40px;font-size:0.8rem;color:#666;text-align:center}</style></head><body>
@@ -745,7 +746,7 @@ async function generateReceipt(txId) {
 
 // ================== RÉUNIONS ==================
 async function renderMeetings() {
-  const {data:meetings}=await supabase.from('meetings').select('*').order('date',{ascending:false});
+  const {data:meetings}=await sb.from('meetings').select('*').order('date',{ascending:false});
   return `<button class="btn btn-primary btn-block" onclick="openCreateMeeting()">+ Nouvelle réunion</button>
     <div class="card" style="margin-top:12px">${(meetings||[]).map(m=>`<div class="list-item" onclick="openMeetingDetail('${m.id}')">
       <div><strong>${m.title}</strong><div style="font-size:0.8rem;color:#64748b">${new Date(m.date).toLocaleString('fr-FR')}</div></div>
@@ -766,13 +767,13 @@ async function createMeeting() {
   const title=document.getElementById('meet-title').value.trim();
   const date=document.getElementById('meet-date').value;
   if (!title||!date){toast('Titre et date requis');return;}
-  await supabase.from('meetings').insert({title,date,agenda:document.getElementById('meet-agenda').value,quorum_required:Number(document.getElementById('meet-quorum').value)||0,created_by:currentUser.id});
+  await sb.from('meetings').insert({title,date,agenda:document.getElementById('meet-agenda').value,quorum_required:Number(document.getElementById('meet-quorum').value)||0,created_by:currentUser.id});
   closeModal(); toast('Réunion créée'); showScreen('meetings');
 }
 async function openMeetingDetail(id) {
-  const {data:m}=await supabase.from('meetings').select('*').eq('id',id).single();
-  const {data:att}=await supabase.from('attendances').select('*').eq('meeting_id',id);
-  const {data:profiles}=await supabase.from('profiles').select('id,name').eq('disabled',false);
+  const {data:m}=await sb.from('meetings').select('*').eq('id',id).single();
+  const {data:att}=await sb.from('attendances').select('*').eq('meeting_id',id);
+  const {data:profiles}=await sb.from('profiles').select('id,name').eq('disabled',false);
   const present=new Set((att||[]).filter(a=>a.present).map(a=>a.user_id));
   const html=`<div class="modal" id="modal"><div class="modal-content">
     <div class="modal-header"><strong>${m.title}</strong><button class="close-btn" onclick="closeModal()">×</button></div>
@@ -784,7 +785,7 @@ async function openMeetingDetail(id) {
   document.body.insertAdjacentHTML('beforeend',html);
 }
 async function markAttendance(mid, uid, present) {
-  await supabase.from('attendances').upsert({meeting_id:mid,user_id:uid,present,marked_at:new Date().toISOString()},{onConflict:'meeting_id,user_id'});
+  await sb.from('attendances').upsert({meeting_id:mid,user_id:uid,present,marked_at:new Date().toISOString()},{onConflict:'meeting_id,user_id'});
 }
 
 // ================== SETTINGS ==================
@@ -808,7 +809,7 @@ async function renderSettings() {
 
 async function loadMembersList() {
   const c=document.getElementById('members-list'); if (!c) return;
-  const {data:profiles}=await supabase.from('profiles').select('*').order('name');
+  const {data:profiles}=await sb.from('profiles').select('*').order('name');
   c.innerHTML=(profiles||[]).map(u=>`<div class="list-item" style="flex-direction:column;align-items:stretch;gap:6px">
     <div style="display:flex;justify-content:space-between">
       <div><strong>${u.name}</strong> ${u.disabled?'<span class="badge badge-declare">Désactivé</span>':''}
@@ -825,11 +826,11 @@ async function loadMembersList() {
     </div></div>`).join('');
 }
 async function changeRole(uid, role) {
-  await supabase.from('profiles').update({role}).eq('id',uid);
+  await sb.from('profiles').update({role}).eq('id',uid);
   logAudit('change_role','profile',uid,{role}); toast('Rôle mis à jour'); loadMembersList();
 }
 async function toggleDisableMember(uid, disable) {
-  await supabase.from('profiles').update({disabled:disable}).eq('id',uid);
+  await sb.from('profiles').update({disabled:disable}).eq('id',uid);
   toast(disable?'Désactivé':'Réactivé'); loadMembersList();
 }
 function openAddMemberModal() {
@@ -849,12 +850,12 @@ async function addMember() {
   const role=document.getElementById('new-member-role').value;
   const pin=document.getElementById('new-member-pin').value.trim();
   if (!name||!email||pin.length<4){toast('Champs obligatoires');return;}
-  const {error}=await supabase.auth.signUp({email,password:pin,options:{data:{name,role}}});
+  const {error}=await sb.auth.signUp({email,password:pin,options:{data:{name,role}}});
   if (error) toast(error.message); else {closeModal();toast('Membre créé');loadMembersList();logAudit('create_member','profile',null,{email,role});}
 }
 
 async function showAuditLogs() {
-  const {data:logs}=await supabase.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(50);
+  const {data:logs}=await sb.from('audit_logs').select('*').order('created_at',{ascending:false}).limit(50);
   const html=`<div class="modal" id="modal"><div class="modal-content">
     <div class="modal-header"><strong>Journal d'audit</strong><button class="close-btn" onclick="closeModal()">×</button></div>
     ${(logs||[]).map(l=>`<div class="list-item" style="flex-direction:column;align-items:flex-start">
@@ -866,7 +867,7 @@ async function showAuditLogs() {
 
 async function loadLoginLogs() {
   const c=document.getElementById('login-logs'); if (!c) return;
-  const {data}=await supabase.from('login_logs').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(8);
+  const {data}=await sb.from('login_logs').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(8);
   c.innerHTML=(data||[]).map(l=>`<div style="font-size:0.8rem;padding:6px 0;border-bottom:1px solid #e2e8f0">
     ${new Date(l.created_at).toLocaleString('fr-FR')} ${l.is_new_device?'🆕':''}<br><span style="color:#64748b">${(l.user_agent||'').slice(0,60)}</span>
   </div>`).join('')||'<div class="empty">Aucune connexion</div>';
@@ -874,7 +875,7 @@ async function loadLoginLogs() {
 
 async function exportJSON() {
   const txs=await getTransactions();
-  const {data:profiles}=await supabase.from('profiles').select('*');
+  const {data:profiles}=await sb.from('profiles').select('*');
   const blob=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),profiles,transactions:txs},null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=`FamilyFinTracker_${new Date().toISOString().slice(0,10)}.json`; a.click();
@@ -889,7 +890,7 @@ async function manualSync() {
 // ================== INIT ==================
 async function init() {
   await LocalCache.init();
-  const {data:{session}}=await supabase.auth.getSession();
+  const {data:{session}}=await sb.auth.getSession();
   if (session) {
     await loadProfile();
     if (currentProfile) { currentScreen='home'; subscribeRealtime(); }
