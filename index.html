@@ -896,7 +896,8 @@ async function init() {
     if (currentProfile) { currentScreen='home'; subscribeRealtime(); }
   }
   render();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+// Service Worker désactivé temporairement
+// if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 init();
 </script>
