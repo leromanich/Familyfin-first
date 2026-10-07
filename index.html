@@ -67,8 +67,9 @@ label{font-size:.85rem;font-weight:600;display:block;margin-top:12px}
 
 <script>
 // ================== CONFIG SUPABASE ==================
-const SUPABASE_URL = 'https://oiuhotnsnradzabmdytk.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdWhvdG5zbnJhZHphYm1keXRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExMTM3NDUsImV4cCI6MjEwNjY4OTc0NX0.JCjqwM2HAgiIVX9YwMN63PGzeA6Q9Tl8qsyou1Pke1I';
+// ⚠️ REMPLACE CES DEUX VALEURS PAR LES TIENNES
+const SUPABASE_URL = 'https://TON-PROJECT-ID.supabase.co';
+const SUPABASE_ANON_KEY = 'TON_ANON_KEY_ICI';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ================== CONSTANTES ==================
@@ -265,14 +266,14 @@ function subscribeRealtime() {
 function render() {
   const app = document.getElementById('app');
   if (!currentUser || !currentProfile) { app.innerHTML = renderLogin(); return; }
-  app.innerHTML = `<div class="screen">\( {renderHeader()}<div id="content"></div></div> \){renderBottomNav()}`;
+  app.innerHTML = `<div class="screen">${renderHeader()}<div id="content"></div></div>${renderBottomNav()}`;
   showScreen(currentScreen === 'login' ? 'home' : currentScreen);
 }
 
 function renderHeader() {
   return `<div class="header">
     <h1>💰 FamilyFinTracker <span id="conn-badge">${isOnline?'🟢':'⚪'}</span></h1>
-    <div class="sub">\( {currentProfile.name} · <span class="role-badge"> \){currentProfile.role}</span></div>
+    <div class="sub">${currentProfile.name} · <span class="role-badge">${currentProfile.role}</span></div>
   </div>`;
 }
 
@@ -285,8 +286,8 @@ function renderBottomNav() {
     {id:'settings',icon:'⚙️',label:'Réglages'}
   ];
   return `<div class="bottom-nav">${items.map(i => `
-    <div class="nav-item \( {currentScreen===i.id?'active':''}" onclick="showScreen(' \){i.id}')">
-      <span>\( {i.icon} \){i.id==='ops'?`<span id="ops-badge" class="hidden" style="position:absolute;top:-6px;right:-10px;background:#dc2626;color:#fff;font-size:0.65rem;min-width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700"></span>`:''}</span>
+    <div class="nav-item ${currentScreen===i.id?'active':''}" onclick="showScreen('${i.id}')">
+      <span>${i.icon}${i.id==='ops'?`<span id="ops-badge" class="hidden" style="position:absolute;top:-6px;right:-10px;background:#dc2626;color:#fff;font-size:0.65rem;min-width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700"></span>`:''}</span>
       ${i.label}
     </div>`).join('')}</div>`;
 }
@@ -308,7 +309,7 @@ function renderLogin() {
       <div id="reg-extra" class="hidden">
         <div class="form-group"><label>Nom complet</label><input type="text" id="auth-name"></div>
         <div class="form-group"><label>Rôle</label>
-          <select id="auth-role">\( {ROLES.filter(r=>r!=='Admin').map(r=>`<option value=" \){r}">${r}</option>`).join('')}</select>
+          <select id="auth-role">${ROLES.filter(r=>r!=='Admin').map(r=>`<option value="${r}">${r}</option>`).join('')}</select>
         </div>
       </div>
       <button class="btn btn-primary btn-block" id="auth-btn" data-mode="login" onclick="handleAuth()">Se connecter</button>
@@ -399,9 +400,9 @@ function renderTxItem(t) {
   const cls = t.type==='depot'?'positive':'negative';
   const pend = t.pending_sync ? ' <span class="badge badge-declare">⏳</span>' : '';
   return `<div class="list-item" onclick="openTxDetail('${t.id}')">
-    <div><div style="font-weight:600">\( {t.description||t.type} \){pend}</div>
-    <div style="font-size:.8rem;color:#64748b">\( {t.date} · <span class="badge badge- \){t.status}">${STATUSES[t.status]}</span></div></div>
-    <div class="amount \( {cls}"> \){sign}${formatFCFA(t.amount)}</div></div>`;
+    <div><div style="font-weight:600">${t.description||t.type}${pend}</div>
+    <div style="font-size:.8rem;color:#64748b">${t.date} · <span class="badge badge-${t.status}">${STATUSES[t.status]}</span></div></div>
+    <div class="amount ${cls}">${sign}${formatFCFA(t.amount)}</div></div>`;
 }
 
 async function renderOps() {
@@ -420,7 +421,7 @@ async function renderOps() {
     <div class="grid-2" style="gap:8px">
       <select onchange="window._filters={...window._filters||{},status:this.value};showScreen('ops')">
         <option value="all">Tous statuts</option>
-        \( {Object.entries(STATUSES).map(([k,v])=>`<option value=" \){k}" \( {f.status===k?'selected':''}> \){v}</option>`).join('')}
+        ${Object.entries(STATUSES).map(([k,v])=>`<option value="${k}" ${f.status===k?'selected':''}>${v}</option>`).join('')}
       </select>
       <select onchange="window._filters={...window._filters||{},type:this.value};showScreen('ops')">
         <option value="all">Tous types</option>
@@ -434,7 +435,7 @@ async function renderOps() {
     </div>
     <select style="margin-top:8px" onchange="window._filters={...window._filters||{},cat:this.value};showScreen('ops')">
       <option value="">Toutes catégories</option>
-      \( {CATEGORIES.map(c=>`<option value=" \){c}" \( {f.cat===c?'selected':''}> \){c}</option>`).join('')}
+      ${CATEGORIES.map(c=>`<option value="${c}" ${f.cat===c?'selected':''}>${c}</option>`).join('')}
     </select>
     <button class="btn btn-outline btn-block" style="margin-top:8px" onclick="window._filters={};showScreen('ops')">Effacer filtres</button>
   </div>
@@ -453,13 +454,13 @@ function openAddModal() {
     <div class="form-group"><label>Description</label><input type="text" id="tx-desc"></div>
     <div class="form-group"><label>Répartition</label><div id="splits">
       <div class="grid-2" style="margin-bottom:6px">
-        <select class="split-cat">\( {CATEGORIES.map(c=>`<option> \){c}</option>`).join('')}</select>
+        <select class="split-cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select>
         <input type="number" class="split-amt" placeholder="Montant">
       </div></div>
       <button class="btn btn-outline" style="margin-top:6px;padding:8px" onclick="addSplitRow()">+ Catégorie</button>
     </div>
     <div class="form-group"><label>Type de pièce</label>
-      <select id="tx-photo-type">\( {PHOTO_TYPES.map(p=>`<option value=" \){p.value}">${p.label}</option>`).join('')}</select></div>
+      <select id="tx-photo-type">${PHOTO_TYPES.map(p=>`<option value="${p.value}">${p.label}</option>`).join('')}</select></div>
     <div class="form-group"><label>Photo</label><input type="file" id="tx-photo" accept="image/*" capture="environment"></div>
     <button class="btn btn-primary btn-block" onclick="saveTransaction()">Enregistrer</button>
   </div></div>`;
@@ -467,7 +468,7 @@ function openAddModal() {
 }
 function addSplitRow() {
   const d = document.createElement('div'); d.className='grid-2'; d.style.marginBottom='6px';
-  d.innerHTML = `<select class="split-cat">\( {CATEGORIES.map(c=>`<option> \){c}</option>`).join('')}</select><input type="number" class="split-amt" placeholder="Montant">`;
+  d.innerHTML = `<select class="split-cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select><input type="number" class="split-amt" placeholder="Montant">`;
   document.getElementById('splits').appendChild(d);
 }
 function closeModal() { document.getElementById('modal')?.remove(); }
@@ -487,7 +488,7 @@ async function saveTransaction(isEdit=false) {
   let photoTypes = [];
   const file = document.getElementById('tx-photo')?.files[0];
   if (file) {
-    const path = `\( {currentUser.id}/ \){Date.now()}-${file.name}`;
+    const path = `${currentUser.id}/${Date.now()}-${file.name}`;
     const {error} = await supabase.storage.from('receipts').upload(path, file);
     if (!error) {
       const url = supabase.storage.from('receipts').getPublicUrl(path).data.publicUrl;
@@ -533,9 +534,9 @@ async function openTxDetail(id) {
     <div class="modal-header"><strong>Détail</strong><button class="close-btn" onclick="closeModal()">×</button></div>
     <p><strong>${t.type==='depot'?'Dépôt':'Dépense'}</strong> · ${formatFCFA(t.amount)}</p>
     <p style="color:#64748b;font-size:.9rem">${t.date} · ${t.description||''}</p>
-    <p><span class="badge badge-\( {t.status}"> \){STATUSES[t.status]}</span></p>
-    <div style="margin:12px 0"><strong>Répartition</strong>\( {(t.category_splits||[]).map(s=>`<div> \){s.cat}: ${formatFCFA(s.amount)}</div>`).join('')}</div>
-    \( {visiblePhotos.length?`<div><strong>Pièces</strong><br> \){visiblePhotos.map(p=>`<img src="${p.url}" class="photo-preview">`).join('')}</div>`:''}
+    <p><span class="badge badge-${t.status}">${STATUSES[t.status]}</span></p>
+    <div style="margin:12px 0"><strong>Répartition</strong>${(t.category_splits||[]).map(s=>`<div>${s.cat}: ${formatFCFA(s.amount)}</div>`).join('')}</div>
+    ${visiblePhotos.length?`<div><strong>Pièces</strong><br>${visiblePhotos.map(p=>`<img src="${p.url}" class="photo-preview">`).join('')}</div>`:''}
     <div style="margin-top:12px"><strong>Validations</strong>
       <div class="validation-row">
         <span class="badge ${t.validations?.tresorier?'badge-reparti':'badge-declare'}">Trésorier ${t.validations?.tresorier?'✓':'○'}</span>
@@ -544,10 +545,10 @@ async function openTxDetail(id) {
       </div>
     </div>
     ${canAct?renderActions(t):''}
-    \( {t.status==='reparti'&&canProposeRevision(currentProfile.role)?`<button class="btn btn-outline btn-block" style="margin-top:12px" onclick="openRevisionModal(' \){t.id}')">🔄 Réviser (AG)</button>`:''}
-    \( {canEdit?`<button class="btn btn-outline btn-block" style="margin-top:8px" onclick="openEditModal(' \){t.id}')">✏️ Éditer</button>`:''}
-    \( {canDelete?`<button class="btn btn-danger btn-block" style="margin-top:8px" onclick="deleteTransaction(' \){t.id}')">🗑️ Supprimer</button>`:''}
-    \( {['confirme','encours','reparti'].includes(t.status)?`<button class="btn btn-outline btn-block" style="margin-top:8px" onclick="generateReceipt(' \){t.id}')">🧾 Reçu</button>`:''}
+    ${t.status==='reparti'&&canProposeRevision(currentProfile.role)?`<button class="btn btn-outline btn-block" style="margin-top:12px" onclick="openRevisionModal('${t.id}')">🔄 Réviser (AG)</button>`:''}
+    ${canEdit?`<button class="btn btn-outline btn-block" style="margin-top:8px" onclick="openEditModal('${t.id}')">✏️ Éditer</button>`:''}
+    ${canDelete?`<button class="btn btn-danger btn-block" style="margin-top:8px" onclick="deleteTransaction('${t.id}')">🗑️ Supprimer</button>`:''}
+    ${['confirme','encours','reparti'].includes(t.status)?`<button class="btn btn-outline btn-block" style="margin-top:8px" onclick="generateReceipt('${t.id}')">🧾 Reçu</button>`:''}
     <div id="revisions-list" style="margin-top:16px"></div>
   </div></div>`;
   document.body.insertAdjacentHTML('beforeend', html);
@@ -556,10 +557,10 @@ async function openTxDetail(id) {
   if (cont && revs?.length) {
     cont.innerHTML = `<strong>Révisions AG</strong>${revs.map(r=>`<div class="card" style="margin-top:8px;padding:12px">
       <div style="font-size:0.85rem"><strong>${r.proposed_by_name}</strong> – ${new Date(r.created_at).toLocaleDateString('fr-FR')}
-        <span class="badge \( {r.status==='validee'?'badge-reparti':'badge-encours'}"> \){r.status}</span></div>
+        <span class="badge ${r.status==='validee'?'badge-reparti':'badge-encours'}">${r.status}</span></div>
       <div style="margin-top:4px">${r.motif}</div>
       ${r.status==='en_cours'&&isBureau(currentProfile.role)?`<button class="btn btn-success" style="margin-top:8px;padding:6px 12px;font-size:0.8rem"
-        onclick="validateRevision('\( {r.id}',' \){currentProfile.role==='Trésorier'?'tresorier':currentProfile.role==='Secrétaire'?'secretaire':'commissaire'}')">Valider</button>`:''}
+        onclick="validateRevision('${r.id}','${currentProfile.role==='Trésorier'?'tresorier':currentProfile.role==='Secrétaire'?'secretaire':'commissaire'}')">Valider</button>`:''}
     </div>`).join('')}`;
   }
 }
@@ -570,7 +571,7 @@ function renderActions(t) {
   if (t.status==='confirme') b += `<button class="btn btn-primary btn-block" onclick="changeStatus('${t.id}','encours')">En cours</button>`;
   if (t.status==='encours' && isBureau(currentProfile.role)) {
     const key = currentProfile.role==='Trésorier'?'tresorier':currentProfile.role==='Secrétaire'?'secretaire':'commissaire';
-    if (!t.validations?.[key]) b += `<button class="btn btn-success btn-block" onclick="validateRepartition('\( {t.id}',' \){key}')">Valider (mon rôle)</button>`;
+    if (!t.validations?.[key]) b += `<button class="btn btn-success btn-block" onclick="validateRepartition('${t.id}','${key}')">Valider (mon rôle)</button>`;
   }
   if (t.status==='encours' && currentProfile.role==='Admin') b += `<button class="btn btn-success btn-block" onclick="forceReparti('${t.id}')">Forcer Réparti</button>`;
   return b;
@@ -627,7 +628,7 @@ function openRevisionModal(txId) {
       <div class="form-group"><label>Motif *</label><textarea id="rev-motif" rows="3"></textarea></div>
       <div class="form-group"><label>Nouvelle répartition</label><div id="rev-splits">
         ${(t.category_splits||[]).map(s=>`<div class="grid-2" style="margin-bottom:6px">
-          <select class="split-cat">${CATEGORIES.map(c=>`<option \( {c===s.cat?'selected':''}> \){c}</option>`).join('')}</select>
+          <select class="split-cat">${CATEGORIES.map(c=>`<option ${c===s.cat?'selected':''}>${c}</option>`).join('')}</select>
           <input type="number" class="split-amt" value="${s.amount}">
         </div>`).join('')}
       </div><button class="btn btn-outline" style="margin-top:6px;padding:8px" onclick="addRevSplitRow()">+ Ajouter</button></div>
@@ -640,7 +641,7 @@ function openRevisionModal(txId) {
 }
 function addRevSplitRow() {
   const d=document.createElement('div'); d.className='grid-2'; d.style.marginBottom='6px';
-  d.innerHTML=`<select class="split-cat">\( {CATEGORIES.map(c=>`<option> \){c}</option>`).join('')}</select><input type="number" class="split-amt" placeholder="Montant">`;
+  d.innerHTML=`<select class="split-cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select><input type="number" class="split-amt" placeholder="Montant">`;
   document.getElementById('rev-splits').appendChild(d);
 }
 async function saveRevision(txId) {
@@ -655,7 +656,7 @@ async function saveRevision(txId) {
   let pvUrl=null;
   const file=document.getElementById('rev-photo').files[0];
   if (file) {
-    const path=`revisions/\( {currentUser.id}/ \){Date.now()}-${file.name}`;
+    const path=`revisions/${currentUser.id}/${Date.now()}-${file.name}`;
     const {error}=await supabase.storage.from('receipts').upload(path,file);
     if (!error) pvUrl=supabase.storage.from('receipts').getPublicUrl(path).data.publicUrl;
   }
@@ -688,7 +689,7 @@ async function renderReport() {
   setTimeout(()=>renderCharts(monthTxs, txs), 120);
   return `<div class="form-group"><label>Mois</label>
     <select onchange="window._reportMonth=this.value;showScreen('report')">
-      \( {months.map(m=>`<option value=" \){m}" \( {m===selected?'selected':''}> \){m}</option>`).join('')||`<option>${selected}</option>`}
+      ${months.map(m=>`<option value="${m}" ${m===selected?'selected':''}>${m}</option>`).join('')||`<option>${selected}</option>`}
     </select></div>
     <div class="card"><canvas id="chartPie" height="200"></canvas></div>
     <div class="card"><canvas id="chartLine" height="200"></canvas></div>
@@ -718,7 +719,7 @@ function printMonthlyReport(month) {
     const w=window.open('','_blank');
     w.document.write(`<html><head><title>Rapport ${month}</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px}th{background:#0f766e;color:#fff}</style></head><body>
       <h1>Rapport ${month}</h1><table><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Montant</th><th>Statut</th></tr></thead>
-      <tbody>\( {list.map(t=>`<tr><td> \){t.date}</td><td>\( {t.type}</td><td> \){t.description||''}</td><td>\( {formatFCFA(t.amount)}</td><td> \){STATUSES[t.status]}</td></tr>`).join('')}</tbody></table>
+      <tbody>${list.map(t=>`<tr><td>${t.date}</td><td>${t.type}</td><td>${t.description||''}</td><td>${formatFCFA(t.amount)}</td><td>${STATUSES[t.status]}</td></tr>`).join('')}</tbody></table>
       <script>window.onload=()=>window.print()<\/script></body></html>`);
     w.document.close();
   });
@@ -735,7 +736,7 @@ async function generateReceipt(txId) {
     <div class="row"><span>Membre</span><strong>${t.created_by_name}</strong></div>
     <div class="row"><span>Description</span><strong>${t.description||'-'}</strong></div>
     <div class="total">${formatFCFA(t.amount)}</div>
-    <div><strong>Répartition :</strong><br>\( {(t.category_splits||[]).map(s=>` \){s.cat}: ${formatFCFA(s.amount)}`).join('<br>')}</div>
+    <div><strong>Répartition :</strong><br>${(t.category_splits||[]).map(s=>`${s.cat}: ${formatFCFA(s.amount)}`).join('<br>')}</div>
     <div style="margin-top:15px"><strong>Validations :</strong><br>Trésorier ${t.validations?.tresorier?'✓':'○'} · Secrétaire ${t.validations?.secretaire?'✓':'○'} · Commissaire ${t.validations?.commissaire?'✓':'○'}</div>
     <div class="footer">Généré le ${new Date().toLocaleString('fr-FR')}<br>ID: ${t.id.slice(0,8)}</div>
     <script>window.onload=()=>window.print()<\/script></body></html>`);
@@ -746,8 +747,8 @@ async function generateReceipt(txId) {
 async function renderMeetings() {
   const {data:meetings}=await supabase.from('meetings').select('*').order('date',{ascending:false});
   return `<button class="btn btn-primary btn-block" onclick="openCreateMeeting()">+ Nouvelle réunion</button>
-    <div class="card" style="margin-top:12px">\( {(meetings||[]).map(m=>`<div class="list-item" onclick="openMeetingDetail(' \){m.id}')">
-      <div><strong>\( {m.title}</strong><div style="font-size:0.8rem;color:#64748b"> \){new Date(m.date).toLocaleString('fr-FR')}</div></div>
+    <div class="card" style="margin-top:12px">${(meetings||[]).map(m=>`<div class="list-item" onclick="openMeetingDetail('${m.id}')">
+      <div><strong>${m.title}</strong><div style="font-size:0.8rem;color:#64748b">${new Date(m.date).toLocaleString('fr-FR')}</div></div>
     </div>`).join('')||'<div class="empty">Aucune réunion</div>'}</div>`;
 }
 function openCreateMeeting() {
@@ -775,10 +776,10 @@ async function openMeetingDetail(id) {
   const present=new Set((att||[]).filter(a=>a.present).map(a=>a.user_id));
   const html=`<div class="modal" id="modal"><div class="modal-content">
     <div class="modal-header"><strong>${m.title}</strong><button class="close-btn" onclick="closeModal()">×</button></div>
-    <p>\( {new Date(m.date).toLocaleString('fr-FR')}</p><p style="font-size:0.9rem"> \){m.agenda||''}</p>
+    <p>${new Date(m.date).toLocaleString('fr-FR')}</p><p style="font-size:0.9rem">${m.agenda||''}</p>
     <p>Quorum: ${m.quorum_required} · Présents: ${present.size}</p><strong>Présences</strong>
-    \( {(profiles||[]).map(p=>`<div class="list-item"><div> \){p.name}</div>
-      <input type="checkbox" \( {present.has(p.id)?'checked':''} onchange="markAttendance(' \){id}','${p.id}',this.checked)"></div>`).join('')}
+    ${(profiles||[]).map(p=>`<div class="list-item"><div>${p.name}</div>
+      <input type="checkbox" ${present.has(p.id)?'checked':''} onchange="markAttendance('${id}','${p.id}',this.checked)"></div>`).join('')}
   </div></div>`;
   document.body.insertAdjacentHTML('beforeend',html);
 }
@@ -790,7 +791,7 @@ async function markAttendance(mid, uid, present) {
 async function renderSettings() {
   return `<div class="card">
     <strong>Mon profil</strong>
-    <p style="margin-top:8px">\( {currentProfile.name}<br> \){currentProfile.email}<br><span class="role-badge">${currentProfile.role}</span></p>
+    <p style="margin-top:8px">${currentProfile.name}<br>${currentProfile.email}<br><span class="role-badge">${currentProfile.role}</span></p>
     <button class="btn btn-outline btn-block" onclick="logout()">Se déconnecter</button>
   </div>
   ${currentProfile.role==='Admin'?`<div class="card"><strong>Gestion des membres</strong>
@@ -817,10 +818,10 @@ async function loadMembersList() {
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <select onchange="changeRole('${u.id}',this.value)" style="flex:1;padding:6px;font-size:0.8rem">
-        \( {ROLES.map(r=>`<option value=" \){r}" \( {r===u.role?'selected':''}> \){r}</option>`).join('')}
+        ${ROLES.map(r=>`<option value="${r}" ${r===u.role?'selected':''}>${r}</option>`).join('')}
       </select>
       <button class="btn ${u.disabled?'btn-success':'btn-danger'}" style="padding:6px 10px;font-size:0.8rem"
-        onclick="toggleDisableMember('\( {u.id}', \){!u.disabled})">${u.disabled?'Réactiver':'Désactiver'}</button>
+        onclick="toggleDisableMember('${u.id}',${!u.disabled})">${u.disabled?'Réactiver':'Désactiver'}</button>
     </div></div>`).join('');
 }
 async function changeRole(uid, role) {
@@ -836,7 +837,7 @@ function openAddMemberModal() {
     <div class="modal-header"><strong>Ajouter un membre</strong><button class="close-btn" onclick="closeModal()">×</button></div>
     <div class="form-group"><label>Nom</label><input type="text" id="new-member-name"></div>
     <div class="form-group"><label>Email</label><input type="email" id="new-member-email"></div>
-    <div class="form-group"><label>Rôle</label><select id="new-member-role">\( {ROLES.filter(r=>r!=='Admin').map(r=>`<option value=" \){r}">${r}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Rôle</label><select id="new-member-role">${ROLES.filter(r=>r!=='Admin').map(r=>`<option value="${r}">${r}</option>`).join('')}</select></div>
     <div class="form-group"><label>PIN temporaire</label><input type="text" id="new-member-pin" inputmode="numeric" maxlength="6"></div>
     <button class="btn btn-primary btn-block" onclick="addMember()">Créer</button>
   </div></div>`;
@@ -857,7 +858,7 @@ async function showAuditLogs() {
   const html=`<div class="modal" id="modal"><div class="modal-content">
     <div class="modal-header"><strong>Journal d'audit</strong><button class="close-btn" onclick="closeModal()">×</button></div>
     ${(logs||[]).map(l=>`<div class="list-item" style="flex-direction:column;align-items:flex-start">
-      <div><strong>${l.action}</strong> – \( {l.user_name} <span style="font-size:0.75rem;color:#64748b"> \){new Date(l.created_at).toLocaleString('fr-FR')}</span></div>
+      <div><strong>${l.action}</strong> – ${l.user_name} <span style="font-size:0.75rem;color:#64748b">${new Date(l.created_at).toLocaleString('fr-FR')}</span></div>
       <div style="font-size:0.8rem">${l.entity_type}</div></div>`).join('')||'<div class="empty">Aucun log</div>'}
   </div></div>`;
   document.body.insertAdjacentHTML('beforeend',html);
@@ -867,7 +868,7 @@ async function loadLoginLogs() {
   const c=document.getElementById('login-logs'); if (!c) return;
   const {data}=await supabase.from('login_logs').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(8);
   c.innerHTML=(data||[]).map(l=>`<div style="font-size:0.8rem;padding:6px 0;border-bottom:1px solid #e2e8f0">
-    ${new Date(l.created_at).toLocaleString('fr-FR')} \( {l.is_new_device?'🆕':''}<br><span style="color:#64748b"> \){(l.user_agent||'').slice(0,60)}</span>
+    ${new Date(l.created_at).toLocaleString('fr-FR')} ${l.is_new_device?'🆕':''}<br><span style="color:#64748b">${(l.user_agent||'').slice(0,60)}</span>
   </div>`).join('')||'<div class="empty">Aucune connexion</div>';
 }
 
