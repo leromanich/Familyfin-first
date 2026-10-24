@@ -445,7 +445,7 @@ async function renderOps() {
 }
 
 // ================== ADD / EDIT / DETAIL ==================
-function openAddModal() {
+  function openAddModal() {
   window._editingId = null;
   const html = `<div class="modal" id="modal"><div class="modal-content">
     <div class="modal-header"><strong>Nouvelle opération</strong><button class="close-btn" onclick="closeModal()">×</button></div>
@@ -462,17 +462,19 @@ function openAddModal() {
     </div>
     <div class="form-group"><label>Type de pièce</label>
       <select id="tx-photo-type">${PHOTO_TYPES.map(p=>`<option value="${p.value}">${p.label}</option>`).join('')}</select></div>
-    <div class="form-group"><label>Photo</label><input type="file" id="tx-photo" accept="image/*" ></div>
+    <div class="form-group">
+      <label>Preuve</label>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button type="button" class="btn btn-outline" style="flex:1;padding:10px" onclick="document.getElementById('tx-photo-camera').click()">📷 Photo</button>
+        <button type="button" class="btn btn-outline" style="flex:1;padding:10px" onclick="document.getElementById('tx-photo-gallery').click()">🖼️ Galerie</button>
+      </div>
+      <input type="file" id="tx-photo-camera" accept="image/*" capture="environment" class="hidden">
+      <input type="file" id="tx-photo-gallery" accept="image/*" class="hidden">
+    </div>
     <button class="btn btn-primary btn-block" onclick="saveTransaction()">Enregistrer</button>
   </div></div>`;
   document.body.insertAdjacentHTML('beforeend', html);
 }
-function addSplitRow() {
-  const d = document.createElement('div'); d.className='grid-2'; d.style.marginBottom='6px';
-  d.innerHTML = `<select class="split-cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select><input type="number" class="split-amt" placeholder="Montant">`;
-  document.getElementById('splits').appendChild(d);
-}
-function closeModal() { document.getElementById('modal')?.remove(); }
 
 async function saveTransaction(isEdit=false) {
   const type = document.getElementById('tx-type').value;
@@ -487,7 +489,7 @@ async function saveTransaction(isEdit=false) {
     if (amt>0) splits.push({cat, amount:amt});
   });
   let photoTypes = [];
-  const file = document.getElementById('tx-photo')?.files[0];
+  const file = document.getElementById('tx-photo-camera')?.files[0] || document.getElementById('tx-photo-gallery')?.files[0];
   if (file) {
     const path = `${currentUser.id}/${Date.now()}-${file.name}`;
     const {error} = await sb.storage.from('receipts').upload(path, file);
