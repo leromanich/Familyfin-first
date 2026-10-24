@@ -475,6 +475,17 @@ async function renderOps() {
   </div></div>`;
   document.body.insertAdjacentHTML('beforeend', html);
 }
+  function closeModal() {
+  document.getElementById('modal')?.remove();
+}
+
+function addSplitRow() {
+  const d = document.createElement('div');
+  d.className = 'grid-2';
+  d.style.marginBottom = '6px';
+  d.innerHTML = `<select class="split-cat">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select><input type="number" class="split-amt" placeholder="Montant">`;
+  document.getElementById('splits').appendChild(d);
+}
 
 async function saveTransaction(isEdit=false) {
   const type = document.getElementById('tx-type').value;
