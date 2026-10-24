@@ -462,7 +462,7 @@ function openAddModal() {
     </div>
     <div class="form-group"><label>Type de pièce</label>
       <select id="tx-photo-type">${PHOTO_TYPES.map(p=>`<option value="${p.value}">${p.label}</option>`).join('')}</select></div>
-    <div class="form-group"><label>Photo</label><input type="file" id="tx-photo" accept="image/*" capture="environment"></div>
+    <div class="form-group"><label>Photo</label><input type="file" id="tx-photo" accept="image/*" ></div>
     <button class="btn btn-primary btn-block" onclick="saveTransaction()">Enregistrer</button>
   </div></div>`;
   document.body.insertAdjacentHTML('beforeend', html);
